@@ -181,11 +181,9 @@ A Open-Meteo não exige chave de API.
 
 ## Início rápido
 
-Depois que o projeto Next.js estiver criado:
-
 ```bash
 npm install
-cp .env.example .env.local
+cp .env.example .env
 npm run dev
 ```
 
@@ -195,9 +193,11 @@ A aplicação estará disponível em:
 http://localhost:3000
 ```
 
+Sem a `WEATHER_API_KEY`, a aplicação funciona apenas com a Open-Meteo; a comparação entre fontes fica indisponível com aviso na interface.
+
 ## Variáveis de ambiente
 
-Criar um arquivo `.env.local` na raiz do projeto:
+Criar um arquivo `.env` (ou `.env.local`) na raiz do projeto:
 
 ```env
 WEATHER_API_KEY=
@@ -206,19 +206,20 @@ SUPABASE_SERVICE_ROLE_KEY=
 NEXT_PUBLIC_APP_NAME=AgroClima
 ```
 
-Nunca versionar o arquivo `.env.local` ou expor chaves privadas com o prefixo `NEXT_PUBLIC_`.
+Nunca versionar o arquivo `.env`/`.env.local` ou expor chaves privadas com o prefixo `NEXT_PUBLIC_`.
+
+As variáveis do Supabase são opcionais até a Fase 6 (histórico); sem elas, a persistência fica desativada e o restante da aplicação segue funcionando.
 
 ## Scripts
 
-Os scripts finais serão definidos durante a preparação do projeto. A estrutura esperada é:
-
 ```bash
-npm run dev
-npm run build
-npm run start
-npm run lint
-npm run test
+npm run dev    # servidor de desenvolvimento
+npm run build  # build de produção
+npm run start  # serve o build de produção
+npm run lint   # lint do ESLint
 ```
+
+`npm run test` será adicionado na Fase 4, junto dos testes de regras de cálculo.
 
 ## Escopo do MVP
 
@@ -254,6 +255,8 @@ Para manter o projeto compatível com o prazo acadêmico, não fazem parte do MV
 - A média consolidada é um indicador simples, não uma nova previsão meteorológica científica.
 - As APIs podem usar modelos e horários de atualização diferentes.
 - A comparação fica limitada ao período disponível nas duas fontes.
+- **O plano gratuito da WeatherAPI.com não fornece probabilidade de chuva diária:** para essa métrica a fonte fica em branco (ausência não é tratada como zero) e a comparação do indicador usa apenas a fonte que responde.
+- A geolocalização usa a posição do dispositivo sem geocodificação reversa; a localidade é exibida como "Minha localização" e os detalhes nomeados dependem da busca por cidade.
 - O projeto depende da disponibilidade de serviços externos.
 - O sistema não substitui alertas meteorológicos oficiais nem orientação técnica agronômica.
 
@@ -277,7 +280,10 @@ Leia PROJECT.md e implemente somente a Fase 1. Preserve a arquitetura e o escopo
 
 ## Status
 
-Projeto em fase inicial de desenvolvimento.
+- **Fase 1 (preparação):** concluída.
+- **Fase 2 (localização):** concluída — busca de cidade, geolocalização e última localidade em `localStorage`.
+- **Fase 3 (providers):** concluída — Open-Meteo e WeatherAPI.com consultadas em paralelo, normalizadas e alinhadas por data em `GET /api/forecast`, com cache de ~30 min e resposta parcial quando uma fonte falha.
+- **Próxima:** Fase 4 (cálculos de consolidação e concordância + testes unitários).
 
 ## Equipe
 
