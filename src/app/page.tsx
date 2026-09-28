@@ -1,192 +1,152 @@
-﻿import {
-  ArrowRight,
-  CloudSun,
-  MapPin,
-  Radar,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+"use client";
 
-import { Button } from "@/components/ui/button";
-
-const highlights = [
-  {
-    title: "Duas fontes em paralelo",
-    description:
-      "Open-Meteo e WeatherAPI.com entram no mesmo fluxo, sem expor chaves no frontend.",
-    icon: CloudSun,
-  },
-  {
-    title: "Consolidação explicável",
-    description:
-      "Média, divergência e concordância ficam em funções puras e fáceis de testar.",
-    icon: ShieldCheck,
-  },
-  {
-    title: "Base pronta para histórico",
-    description:
-      "A estrutura já prevê persistência no Supabase e evolução gradual do MVP.",
-    icon: Radar,
-  },
-] as const;
-
-const metrics = [
-  { label: "Fontes", value: "2" },
-  { label: "Dias comparados", value: "3" },
-  { label: "Status", value: "Bootstrap" },
-] as const;
-
-const nextSteps = [
-  "Conectar busca por cidade e geolocalização.",
-  "Normalizar os retornos das duas APIs.",
-  "Exibir comparação diária com concordância.",
-] as const;
+import { useCallback, useEffect, useRef, useState } from "react";
+import { CloudSun, MapPin, Sparkles } from "lucide-react";
+import { GeolocationButton } from "@/components/location/geolocation-button";
+import { LocationSearch } from "@/components/location/location-search";
+import { ForecastPanel } from "@/components/weather/forecast-panel";
+import { getLastLocation, saveLastLocation } from "@/lib/location-storage";
+import type { LocationResult } from "@/schemas/location";
+import type { ForecastResponse } from "@/types/forecast";
+import type { SelectedLocation } from "@/types/location";
 
 export default function Home() {
+  const [selected, setSelected] = useState<SelectedLocation | null>(null);
+  const [forecast, setForecast] = useState<ForecastResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const requestIdRef = useRef(0);
+
+  const loadForecast = useCallback(async (location: SelectedLocation) => {
+    const requestId = ++requestIdRef.current;
+    setIsLoading(true);
+    setError(null);
+    setForecast(null);
+
+    const params = new URLSearchParams({
+      lat: String(location.latitude),
+      lon: String(location.longitude),
+      name: location.name,
+    });
+
+    try {
+      const response = await fetch(`/api/forecast?${params.toString()}`);
+      const data = (await response.json()) as ForecastResponse;
+      if (requestId !== requestIdRef.current) return;
+      setForecast(data);
+    } catch {
+      if (requestId !== requestIdRef.current) return;
+      setError(
+        "Não foi possível carregar a previsão. Verifique sua conexão e tente novamente."
+      );
+    } finally {
+      if (requestId === requestIdRef.current) setIsLoading(false);
+    }
+  }, []);
+
+  const handleSelect = useCallback(
+    (location: LocationResult | SelectedLocation) => {
+      const normalized: SelectedLocation = {
+        name: location.name,
+        state: location.state ?? null,
+        country: location.country ?? null,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        timezone: location.timezone ?? null,
+      };
+      saveLastLocation(normalized);
+      setSelected(normalized);
+      void loadForecast(normalized);
+    },
+    [loadForecast]
+  );
+
+  // Restaura a última localidade persistida (após o mount, sem mismatch de hidratação).
+  useEffect(() => {
+    let active = true;
+    // Fora do ciclo síncrono do efeito, como callback de "external system".
+    void Promise.resolve().then(() => {
+      if (!active) return;
+      const last = getLastLocation();
+      if (last) {
+        setSelected(last);
+        void loadForecast(last);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [loadForecast]);
+
   return (
-    <main className="relative isolate overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_35%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.12),_transparent_28%),linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)]">
-      <div className="absolute inset-x-0 top-0 -z-10 h-[32rem] bg-[linear-gradient(180deg,rgba(255,255,255,0.72),rgba(255,255,255,0))]" />
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-4 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_35%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.12),_transparent_28%),linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)]">
+      <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col px-4 py-4 sm:px-6">
         <header className="flex items-center justify-between rounded-full border border-white/60 bg-white/75 px-4 py-3 shadow-sm backdrop-blur-xl">
-          <div>
-            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-slate-500">
-              AgroClima
-            </p>
-            <p className="text-sm text-slate-600">
-              Comparação simples de previsões meteorológicas.
-            </p>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-slate-950 p-1.5 text-white">
+              <CloudSun className="h-4 w-4" />
+            </span>
+            <div>
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-slate-500">
+                AgroClima
+              </p>
+              <p className="text-sm text-slate-600">
+                Comparação simples de previsões meteorológicas.
+              </p>
+            </div>
           </div>
-          <div className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-3 py-1 text-xs font-medium text-white shadow-sm">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-950 px-3 py-1 text-xs font-medium text-white shadow-sm">
             <Sparkles className="h-3.5 w-3.5" />
-            Fase 1 ativa
-          </div>
+            Pré-MVP
+          </span>
         </header>
 
-        <section className="grid flex-1 items-center gap-10 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:py-16">
-          <div className="max-w-2xl">
-            <p className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-sm font-medium text-sky-700 shadow-sm shadow-sky-100">
-              <MapPin className="h-4 w-4" />
-              Base inicial com shadcn/ui, Tailwind e App Router
-            </p>
+        <section className="mt-6 rounded-3xl border border-slate-200/80 bg-white/85 p-5 shadow-sm backdrop-blur sm:p-6">
+          <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">
+            Buscar previsão do tempo
+          </h1>
+          <p className="mt-1 text-sm leading-6 text-slate-600">
+            Compare a Open-Meteo e a WeatherAPI.com para a sua cidade.
+          </p>
 
-            <h1 className="mt-6 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-              Compare previsões do tempo com uma leitura direta e sem ruído.
-            </h1>
-
-            <p className="mt-5 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
-              O AgroClima nasce pronto para reunir Open-Meteo e WeatherAPI.com,
-              alinhar três dias de previsão e mostrar a diferença entre as fontes
-              em uma interface pensada para celular primeiro.
-            </p>
-
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" className="shadow-lg shadow-slate-950/10">
-                <MapPin className="h-4 w-4" />
-                Buscar cidade
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <a href="#base">
-                  Ver base do projeto
-                  <ArrowRight className="h-4 w-4" />
-                </a>
-              </Button>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start">
+            <div className="flex-1">
+              <LocationSearch onSelect={handleSelect} />
             </div>
-
-            <div className="mt-10 grid gap-4 sm:grid-cols-3">
-              {metrics.map((metric) => (
-                <div
-                  key={metric.label}
-                  className="rounded-3xl border border-white/70 bg-white/80 p-4 shadow-sm backdrop-blur"
-                >
-                  <p className="text-xs font-medium uppercase tracking-[0.22em] text-slate-500">
-                    {metric.label}
-                  </p>
-                  <p className="mt-3 text-2xl font-semibold text-slate-950">
-                    {metric.value}
-                  </p>
-                </div>
-              ))}
-            </div>
+            <GeolocationButton onSelect={handleSelect} disabled={isLoading} />
           </div>
 
-          <div className="relative">
-            <div className="absolute inset-0 -z-10 rounded-[2rem] bg-gradient-to-br from-sky-400/25 via-cyan-300/15 to-emerald-300/20 blur-3xl" />
-            <div className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-slate-950 p-6 text-white shadow-2xl shadow-slate-950/20">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.26em] text-sky-200/75">
-                    Resumo do protótipo
-                  </p>
-                  <h2 className="mt-2 text-2xl font-semibold">
-                    Comparação explicável em um único painel
-                  </h2>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-sky-200">
-                  <CloudSun className="h-6 w-6" />
-                </div>
-              </div>
-
-              <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                {highlights.map((item) => {
-                  const Icon = item.icon;
-
-                  return (
-                    <div
-                      key={item.title}
-                      className="rounded-2xl border border-white/10 bg-white/5 p-4"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="rounded-xl bg-white/10 p-2 text-sky-200">
-                          <Icon className="h-5 w-5" />
-                        </div>
-                        <h3 className="text-sm font-semibold leading-5 text-white">
-                          {item.title}
-                        </h3>
-                      </div>
-                      <p className="mt-3 text-sm leading-6 text-slate-300">
-                        {item.description}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div
-                id="base"
-                className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/6 p-5"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="rounded-2xl bg-emerald-400/15 p-3 text-emerald-200">
-                    <Radar className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-white">
-                      Próxima entrega técnica
-                    </p>
-                    <p className="mt-1 text-sm leading-6 text-slate-300">
-                      Conectar localização, consultar os providers e retornar a
-                      previsão já normalizada.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {selected && (
+            <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700">
+              <MapPin className="h-3.5 w-3.5" />
+              {selected.name}
+              <span className="text-sky-500">
+                ({selected.latitude.toFixed(4)}, {selected.longitude.toFixed(4)})
+              </span>
+            </p>
+          )}
         </section>
 
-        <section className="grid gap-4 pb-8 md:grid-cols-3">
-          {nextSteps.map((step, index) => (
-            <div
-              key={step}
-              className="rounded-3xl border border-slate-200/80 bg-white/75 p-5 shadow-sm backdrop-blur"
-            >
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-                0{index + 1}
+        <section className="mt-4 flex-1">
+          {selected ? (
+            <ForecastPanel forecast={forecast} isLoading={isLoading} error={error} />
+          ) : (
+            <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-slate-300 bg-white/50 p-10 text-center">
+              <MapPin className="h-8 w-8 text-slate-300" />
+              <p className="max-w-sm text-sm leading-6 text-slate-500">
+                Busque uma cidade ou use sua localização para ver a previsão comparada
+                entre as duas fontes.
               </p>
-              <p className="mt-3 text-sm leading-6 text-slate-700">{step}</p>
             </div>
-          ))}
+          )}
         </section>
+
+        <footer className="pb-6 pt-8 text-center text-xs leading-5 text-slate-400">
+          Fontes meteorológicas: Open-Meteo e WeatherAPI.com. Previsões de 3 dias.
+          <br />
+          Projeto acadêmico — os valores exibidos não substituem alertas
+          meteorológicos oficiais.
+        </footer>
       </div>
     </main>
   );

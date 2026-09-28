@@ -22,8 +22,9 @@ function describeProviderError(reason: unknown): string {
   if (reason instanceof Error && reason.name === "TimeoutError") {
     return "Tempo limite excedido ao consultar a fonte.";
   }
-  if (reason instanceof Error) {
-    return "Falha ao consultar a fonte.";
+  // As mensagens dos providers são seguras para exibição (sem segredos).
+  if (reason instanceof Error && reason.message) {
+    return reason.message;
   }
   return "Erro desconhecido ao consultar a fonte.";
 }
