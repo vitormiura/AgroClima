@@ -69,7 +69,8 @@ export async function fetchWeatherApiForecast(latitude: number, longitude: numbe
   const data = (await response.json().catch(() => null)) as WeatherApiResponse | null;
 
   if (!response.ok || !data) {
-    throw new Error(`WeatherAPI respondeu ${response.status}`);
+    // Para erros 4xx/5xx com corpo legível, usa a mensagem da API (sem segredos).
+    throw new Error(data?.error?.message ?? `WeatherAPI respondeu ${response.status}`);
   }
 
   if (data.error) {
