@@ -217,9 +217,11 @@ npm run dev    # servidor de desenvolvimento
 npm run build  # build de produção
 npm run start  # serve o build de produção
 npm run lint   # lint do ESLint
+npm test       # testes unitários (Vitest) das regras de cálculo
 ```
 
-`npm run test` será adicionado na Fase 4, junto dos testes de regras de cálculo.
+
+
 
 ## Escopo do MVP
 
@@ -255,7 +257,7 @@ Para manter o projeto compatível com o prazo acadêmico, não fazem parte do MV
 - A média consolidada é um indicador simples, não uma nova previsão meteorológica científica.
 - As APIs podem usar modelos e horários de atualização diferentes.
 - A comparação fica limitada ao período disponível nas duas fontes.
-- **O plano gratuito da WeatherAPI.com não fornece probabilidade de chuva diária:** para essa métrica a fonte fica em branco (ausência não é tratada como zero) e a comparação do indicador usa apenas a fonte que responde.
+- **A probabilidade de chuva da WeatherAPI.com depende do plano:** o campo lido é `daily_chance_of_rain`; quando o plano não o fornece, a métrica fica em branco para essa fonte (ausência não é tratada como zero) e a comparação do indicador usa apenas a fonte que responde.
 - A geolocalização usa a posição do dispositivo sem geocodificação reversa; a localidade é exibida como "Minha localização" e os detalhes nomeados dependem da busca por cidade.
 - O projeto depende da disponibilidade de serviços externos.
 - O sistema não substitui alertas meteorológicos oficiais nem orientação técnica agronômica.
@@ -283,7 +285,8 @@ Leia PROJECT.md e implemente somente a Fase 1. Preserve a arquitetura e o escopo
 - **Fase 1 (preparação):** concluída.
 - **Fase 2 (localização):** concluída — busca de cidade, geolocalização e última localidade em `localStorage`.
 - **Fase 3 (providers):** concluída — Open-Meteo e WeatherAPI.com consultadas em paralelo, normalizadas e alinhadas por data em `GET /api/forecast`, com cache de ~30 min e resposta parcial quando uma fonte falha.
-- **Próxima:** Fase 4 (cálculos de consolidação e concordância + testes unitários).
+- **Fase 4 (cálculos e testes):** concluída — consolidação, diferença absoluta, divergência percentual e concordância implementadas em `src/lib/weather/compare.ts`, cobertas por 30 testes unitários (Vitest) em `tests/weather-calculations.test.ts`. A página `/comparar` exibe a comparação dia a dia.
+- **Próximas:** Fase 5 (gráficos comparativos com Recharts) e Fase 6 (histórico no Supabase ligado à rota `/api/forecast`).
 
 ## Equipe
 
