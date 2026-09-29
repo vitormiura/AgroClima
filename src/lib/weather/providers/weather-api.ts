@@ -22,11 +22,12 @@ interface WeatherApiCondition {
 interface WeatherApiDayResponse {
   date?: string;
   day?: {
-    temp_min_c?: number;
-    temp_max_c?: number;
-    humidity?: number;
+    mintemp_c?: number;
+    maxtemp_c?: number;
+    avghumidity?: number;
     totalprecip_mm?: number;
-    maxwind_kmph?: number;
+    daily_chance_of_rain?: number;
+    maxwind_kph?: number;
     condition?: WeatherApiCondition;
   };
 }
@@ -44,8 +45,8 @@ function toNumberOrNull(value: unknown): number | null {
  * Consulta a WeatherAPI.com (unidades métricas) por coordenadas.
  * A chave existe apenas no servidor e nunca é logada.
  *
- * Compatibilidade (PROJECT.md §8.3): o plano gratuito não fornece
- * probabilidade de chuva diária, então a métrica fica null (nunca zero).
+ * Campos diários conforme a documentação (forecastday[].day): mintemp_c, maxtemp_c,
+ * avghumidity, totalprecip_mm, daily_chance_of_rain e maxwind_kph.
  */
 export async function fetchWeatherApiForecast(latitude: number, longitude: number): Promise<DailyForecast[]> {
   const { weatherApiKey } = getServerEnv();
@@ -85,12 +86,12 @@ export async function fetchWeatherApiForecast(latitude: number, longitude: numbe
     days.push({
       source: "weather-api",
       date: entry.date,
-      temperatureMinC: toNumberOrNull(entry.day?.temp_min_c),
-      temperatureMaxC: toNumberOrNull(entry.day?.temp_max_c),
-      humidityPercent: toNumberOrNull(entry.day?.humidity),
+      temperatureMinC: toNumberOrNull(entry.day?.mintemp_c),
+      temperatureMaxC: toNumberOrNull(entry.day?.maxtemp_c),
+      humidityPercent: toNumberOrNull(entry.day?.avghumidity),
       precipitationMm: toNumberOrNull(entry.day?.totalprecip_mm),
-      precipitationProbabilityPercent: null,
-      windSpeedMaxKmh: toNumberOrNull(entry.day?.maxwind_kmph),
+      precipitationProbabilityPercent: toNumberOrNull(entry.day?.daily_chance_of_rain),
+      windSpeedMaxKmh: toNumberOrNull(entry.day?.maxwind_kph),
       conditionCode: condition?.code != null ? String(condition.code) : null,
       conditionLabel: condition?.text ?? null,
     });
