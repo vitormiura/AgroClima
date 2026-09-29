@@ -7,76 +7,78 @@
 - **Fase 3 (providers):** concluída — Open-Meteo + WeatherAPI.com em paralelo via
   `Promise.allSettled`, normalização para `DailyForecast`, alinhamento por data local,
   cache em memória (~30 min) e resposta parcial quando uma fonte falha.
-- `npm run lint` e `npm run build` passando.
-- ⚠️ **Chave WeatherAPI inválida:** o `.env` tem `WEATHER_API_KEY` preenchida, mas a API
-  responde `401 {"code":2006,"message":"API key is invalid."}`. A app funciona em modo
-  parcial (só Open-Meteo) até o usuário corrigir a chave no `.env`.
-- `zod` foi registrado no `package.json` (estava usado no code mas ausente).
+  Chave WeatherAPI atendida e validada ao vivo (2 fontes ok, 3 dias cada).
+- **Fase 4 (cálculos e testes):** concluída.
+  - Cálculos por outra dev em `src/lib/weather/compare.ts` + `src/types/comparison.ts`
+    (revisado: fórmulas e limites 10%/25% conferidos e corretos).
+  - Fix dela no provider WeatherAPI: nomes reais dos campos diários (`mintemp_c`,
+    `maxtemp_c`, `avghumidity`, `totalprecip_mm`, `daily_chance_of_rain`, `maxwind_kph`)
+    — validado com resposta real da API (prob. de chuva voltou 6% em Campinas).
+  - Testes: `npm i -D vitest@^3` + `vitest.config.mts` + `tests/weather-calculations.test.ts`
+    (30 testes, todos passando; `npm test` no package.json).
+- **Bônus da dev (já na branch):** página `/comparar` (seletor de 3 dias, cards com
+  consolidado + badges de concordância, aviso de parcial) e Supabase em fase inicial
+  (`supabase/schema.sql` com RLS + `src/lib/supabase/history.ts` via PostgREST, sem lib).
+  O `saveForecastSnapshots` ainda NÃO está chamado pela rota /api/forecast.
+- `npm run lint`, `npm run build` e `npm test` passando.
 
 ## Important Files
 - `PROJECT.md` — especificação principal (fonte da verdade).
-- `README.md` — atualizado com status por fase, scripts, limitações (prob. de chuva do WeatherAPI).
-- `src/app/page.tsx` — página principal (client component): busca + geolocalização + painel de previsão.
-- `src/components/location/location-search.tsx` — busca com autocomplete, debounce, navegação por teclado.
-- `src/components/location/geolocation-button.tsx` — Geolocation API com estados de erro em pt-BR.
-- `src/lib/location-storage.ts` — persistência da última localidade em `localStorage` (validada com Zod).
-- `src/lib/http.ts` — `fetchWithTimeout` (AbortSignal.timeout, 10 s por padrão).
-- `src/lib/env.ts` — validação de env só no servidor; segredos nunca com `NEXT_PUBLIC_`.
-- `src/lib/weather/constants.ts` — FORECAST_DAYS=3, timeout, TTL do cache, rótulos das fontes.
-- `src/lib/weather/providers/open-meteo.ts` — daily com `relative_humidity_2m_mean`, `timezone=auto`, WMO codes → rótulos pt-BR.
-- `src/lib/weather/providers/weather-api.ts` — `q=lat,lon&days=3`; `precipitationProbabilityPercent` sempre `null`
-  (plano gratuito não fornece); erro `WeatherApiKeyMissingError` dedicado.
-- `src/lib/weather/providers/index.ts` — registro `WEATHER_PROVIDERS`.
-- `src/lib/weather/normalize.ts` — `alignForecastDays` (alinhamento por data YYYY-MM-DD).
-- `src/schemas/forecast.ts` — Zod do `GET /api/forecast`.
-- `src/types/forecast.ts` — `DailyForecast`, `WeatherSource`, `ForecastResponse`, `AlignedForecastDay`.
+- `README.md` — Status por fase atualizado (Fases 1-4 concluídas).
+- `src/lib/weather/compare.ts` — funções puras de consolidação/divergência/concordância.
+- `src/types/comparison.ts` — `AgreementLevel`, `MetricComparison`, `DailyComparison`, `MetricKey`.
+- `tests/weather-calculations.test.ts` — 30 testes das regras da seção 9/16 do PROJECT.md.
+- `vitest.config.mts` — alias `@/` + include `tests/**/*.test.ts`.
+- `src/app/comparar/page.tsx` + `src/components/comparacao/*` — página de comparação.
+- `src/lib/supabase/history.ts` + `supabase/schema.sql` — persistência (a ligar na rota).
 - `src/app/api/forecast/route.ts` — rota com cache em memória (Map + TTL 30 min),
   falha total → 502, parcial → 200 com `sourceStatus`.
-- `src/app/api/locations/route.ts` — busca de cidade (Open-Meteo geocoding).
-- `src/components/weather/forecast-panel.tsx` — chips de status por fonte, aviso de parcial
-  (com mensagem da fonte), cards de 3 dias × 6 métricas × 2 fontes (OM/WA).
+- `src/lib/weather/providers/weather-api.ts` — campos diários corrigidos pela dev.
+- `src/lib/env.ts` — validação de env só no servidor; segredos nunca com `NEXT_PUBLIC_`.
+- `src/lib/http.ts` — `fetchWithTimeout`.
+- `src/lib/location-storage.ts` — última localidade em `localStorage` (Zod).
+- `src/components/location/location-search.tsx` / `geolocation-button.tsx` — busca + geo.
+- `src/components/weather/forecast-panel.tsx` — painel da página inicial.
 
 ## Environment Notes
-- Ambiente atual: macOS (Darwin arm64), Node 20.11.0 (o projeto declara Node 24.19.x;
-  npm apenas avisa EBADENGINE e tudo funciona).
-- A busca web e o acesso a `*.inmet.gov.br` estão bloqueados neste ambiente de sandbox
-  (a decisão de usar INMET foi descartada a favor do WeatherAPI com chave do usuário).
+- Ambiente atual: macOS (Darwin arm64), Node 20.11.0 (projeto declara 24.19.x; npm só avisa).
+- A busca web e `*.inmet.gov.br` estão bloqueados no sandbox (INMET foi descartada;
+  a fonte 2 final é WeatherAPI.com).
+- Atenção: a ferramenta `create_new_file` falhava intermitentemente nesta máquina
+  ("contents argument is required"); usar `cat > arquivo << 'EOF'` como alternativa.
 - Dev server: `npm run dev` em background, log em `/tmp/agroclima-dev.log`.
-  Para parar: `pkill -f "next dev"` (ou `lsof -ti:3000 | xargs kill`).
+  Parar: `pkill -f "next dev"`.
+- Git: branch `feature/comparacao-concordancia` tem tracking de `origin` configurado
+  (antes o `git pull` falhava por falta de upstream).
 
 ## Decisions
-- WeatherAPI.com confirmada como fonte B (chave fornecida pelo usuário no `.env`).
-- INMET descartada (seria por estação, sem geocodificação livre; o projeto manteve o plano original).
-- Umidade diária da Open-Meteo: `relative_humidity_2m_mean` (disponível em daily, verificado ao vivo).
-- WeatherAPI: `day.humidity` (média diária) comparada com a média diária da Open-Meteo —
-  registrado como nota de compatibilidade (PROJECT.md §8.3).
-- Probabilidade de chuva: WeatherAPI (free) não fornece → `null` (nunca zero); documentado no README.
-- Rota `/api/forecast`: falha total → HTTP 502; falha parcial → 200 + `sourceStatus`
-  (app não quebra). Cache em memória por localização com TTL de 30 min.
-- `setState` em `useEffect` foi adiado para microtask por causa da regra
-  `react-hooks/set-state-in-effect` (lint do React 19/Next 16).
+- WeatherAPI.com é a fonte 2 (o usuário primeiro criou conta errada na OpenWeatherMap;
+  depois criou na WeatherAPI.com e a chave ativou e funciona).
+- Probabilidade de chuva do WeatherAPI: usar `daily_chance_of_rain` (existe na resposta
+  real do plano atual); quando o plano não fornecer → null (nunca zero).
+- `compareAlignedDays` fixa Open-Meteo = fonte A e WeatherAPI = fonte B.
+- Valores de divergência/concordância armazenados SEM arredondar; arredondar só na UI.
+- Vitest v3 (compatível com Node 20 desta máquina e com Node 24 do projeto).
+- Supabase via PostgREST (fetch) em vez de `@supabase/supabase-js` (decisão da dev;
+  aceita — menos dependências, só servidor).
+- `compare.ts` usa `sourceA?.[key] ?? null` — DailyForecast nunca tem undefined nos campos, ok.
 
 ## Validation History
-- `npm run lint` passou (após corrigir set-state-in-effect).
-- `npm run build` passou (rotas: `/` estática, `/api/forecast` e `/api/locations` dinâmicas).
-- Teste manual no dev server:
-  - `GET /api/locations?query=campinas` → 200, lista correta.
-  - `GET /api/forecast?lat=-22.9056&lon=-47.0608&name=Campinas` → 200 parcial:
-    open-meteo ok (3 dias completos), weather-api 401 (chave inválida) — comportamento
-    de resposta parcial funcionando; 2ª chamada voltou `cached: true` em ~7 ms.
-- Open-Meteo verificado ao vivo (curl) com todos os campos diários pedidos.
+- `npm run lint` passou (após corrigir set-state-in-effect na página inicial).
+- `npm run build` passou (rotas: `/`, `/comparar`, `/api/forecast`, `/api/locations`).
+- `npm test`: 30/30 passando (um teste meu inicial falhou por erro meu na expectativa
+  da concordância geral: média 2,2 → "medium", não "low"; corrigi o teste, não o código).
+- Ao vivo: `GET /api/forecast?lat=-22.9056&lon=-47.0608&name=Campinas` → 2 fontes ok
+  (open-meteo 3 dias, weather-api 3 dias), prob. de chuva presente nas duas.
 
 ## Next Steps
-1. **Ação do usuário:** corrigir a `WEATHER_API_KEY` no `.env` (API rejeita a atual:
-   "API key is invalid."). Depois, retestar `/api/forecast` e conferir as 2 fontes.
-2. Fase 4: cálculos (consolidate/compare) em `src/lib/weather/` + testes Vitest
-   (`npm i -D vitest`, `tests/weather-calculations.test.ts`) — médias, diferença absoluta,
-   divergência %, limites 10%/25%, concordância geral, alinhamento por data.
-3. Estender `GET /api/forecast` para devolver a comparação consolidada (DailyComparison).
-4. Fase 5: interface comparativa (cards, seletor de dia, gráficos Recharts).
-5. Fase 6: Supabase (schema.sql, cliente server, snapshots, `/api/history`, página `/historico`).
-6. Fase 7: PWA (manifest, ícones, service worker) + deploy Vercel.
-7. Fase 8: documentação final (screenshots, decisões, limitações).
+1. Commitar: README, package.json/lock, tests/, vitest.config.mts (Fase 4 completa).
+2. Fase 5: gráficos comparativos (Recharts) na página /comparar + polir cards/seletor.
+3. Fase 6: ligar `saveForecastSnapshots` na rota /api/forecast (após consulta, sem
+   bloquear resposta), criar `GET /api/history` e página `/historico`.
+   Obs.: executar `supabase/schema.sql` no SQL Editor do Supabase e conferir RLS.
+4. Fase 7: PWA (manifest.ts, ícones, service worker) + deploy Vercel.
+5. Fase 8: documentação final (screenshots, decisões, limitações).
 
 ## Resume Rule
 - Para continuar em outra máquina: ler `PROJECT.md` e depois este arquivo.
