@@ -154,9 +154,9 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Busca + previsão (centralizadas no mobile e no desktop) */}
+        {/* Busca + previsão (mesma largura da página /comparar) */}
         <section className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
-          <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+          <div className="flex w-full flex-col gap-4">
             <SearchCard
               title="Buscar previsão"
               subtitle="Informe a cidade ou use a localização do dispositivo."
@@ -176,7 +176,7 @@ export default function Home() {
             )}
           </div>
 
-          <div className="mx-auto mt-6 w-full max-w-3xl">
+          <div className="mt-6 w-full">
             {selected ? (
               <ForecastPanel forecast={forecast} isLoading={isLoading} error={error} />
             ) : (
