@@ -154,44 +154,42 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Busca + previsão */}
+        {/* Busca + previsão (centralizadas no mobile e no desktop) */}
         <section className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
-          <div className="grid gap-6 lg:grid-cols-[380px_1fr] lg:items-start">
-            <div className="space-y-4">
-              <SearchCard
-                title="Buscar previsão"
-                subtitle="Informe a cidade ou use a localização do dispositivo."
-                selected={selected}
-                isLoading={isLoading}
-                onSelect={handleSelect}
-              />
+          <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+            <SearchCard
+              title="Buscar previsão"
+              subtitle="Informe a cidade ou use a localização do dispositivo."
+              selected={selected}
+              isLoading={isLoading}
+              onSelect={handleSelect}
+            />
 
-              {forecast && (
-                <Link
-                  href="/comparar"
-                  className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-800 transition-colors hover:bg-emerald-100"
-                >
-                  Ver comparação detalhada com concordância
-                  <ArrowRight className="h-4 w-4" aria-hidden />
-                </Link>
-              )}
-            </div>
+            {forecast && (
+              <Link
+                href="/comparar"
+                className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-800 transition-colors hover:bg-emerald-100"
+              >
+                Ver comparação detalhada com concordância
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </Link>
+            )}
+          </div>
 
-            <div>
-              {selected ? (
-                <ForecastPanel forecast={forecast} isLoading={isLoading} error={error} />
-              ) : (
-                <div className="flex h-full min-h-64 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-white/60 p-10 text-center">
-                  <span className="rounded-2xl bg-slate-100 p-3 text-slate-400">
-                    <BarChart3 className="h-7 w-7" aria-hidden />
-                  </span>
-                  <p className="max-w-sm text-sm leading-6 text-slate-500">
-                    Busque uma cidade ou use sua localização para ver a previsão dos
-                    próximos 3 dias, com os valores de cada fonte.
-                  </p>
-                </div>
-              )}
-            </div>
+          <div className="mx-auto mt-6 w-full max-w-3xl">
+            {selected ? (
+              <ForecastPanel forecast={forecast} isLoading={isLoading} error={error} />
+            ) : (
+              <div className="flex min-h-64 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-white/60 p-10 text-center">
+                <span className="rounded-2xl bg-slate-100 p-3 text-slate-400">
+                  <BarChart3 className="h-7 w-7" aria-hidden />
+                </span>
+                <p className="max-w-sm text-sm leading-6 text-slate-500">
+                  Busque uma cidade ou use sua localização para ver a previsão dos
+                  próximos 3 dias, com os valores de cada fonte.
+                </p>
+              </div>
+            )}
           </div>
         </section>
       </main>
