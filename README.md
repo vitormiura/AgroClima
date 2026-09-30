@@ -285,8 +285,9 @@ Leia PROJECT.md e implemente somente a Fase 1. Preserve a arquitetura e o escopo
 - **Fase 1 (preparação):** concluída.
 - **Fase 2 (localização):** concluída — busca de cidade, geolocalização e última localidade em `localStorage`.
 - **Fase 3 (providers):** concluída — Open-Meteo e WeatherAPI.com consultadas em paralelo, normalizadas e alinhadas por data em `GET /api/forecast`, com cache de ~30 min e resposta parcial quando uma fonte falha.
-- **Fase 4 (cálculos e testes):** concluída — consolidação, diferença absoluta, divergência percentual e concordância implementadas em `src/lib/weather/compare.ts`, cobertas por 30 testes unitários (Vitest) em `tests/weather-calculations.test.ts`. A página `/comparar` exibe a comparação dia a dia.
-- **Próximas:** Fase 5 (gráficos comparativos com Recharts) e Fase 6 (histórico no Supabase ligado à rota `/api/forecast`).
+- **Fase 4 (cálculos e testes):** concluída — consolidação, diferença absoluta, divergência percentual e concordância implementadas em `src/lib/weather/compare.ts`, cobertas por 30 testes unitários (Vitest) em `tests/weather-calculations.test.ts`.
+- **Fase 5 (interface comparativa):** concluída — navbar unificada, identidade visual profissional (emerald/slate), gráfico comparativo de temperatura (Recharts) em `/comparar`, cards com consolidado + concordância e estados de erro/parcial.
+- **Próxima:** Fase 6 (histórico no Supabase ligado à rota `/api/forecast` + página `/historico`).
 
 ## Equipe
 

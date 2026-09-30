@@ -1,11 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertCircle, CloudSun, Loader2, MapPin } from "lucide-react";
+import { AlertCircle, CloudSun, Loader2 } from "lucide-react";
 
 import { ComparisonView } from "@/components/comparacao/comparison-view";
-import { GeolocationButton } from "@/components/location/geolocation-button";
-import { LocationSearch } from "@/components/location/location-search";
+import { SearchCard } from "@/components/location/search-card";
 import { getLastLocation, saveLastLocation } from "@/lib/location-storage";
 import { SOURCE_LABELS } from "@/lib/weather/constants";
 import type { LocationResult } from "@/schemas/location";
@@ -86,22 +85,13 @@ export function CompararClient() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl border border-white/70 bg-white/85 p-5 shadow-sm backdrop-blur">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-          <div className="flex-1">
-            <LocationSearch onSelect={handleSelect} />
-          </div>
-          <GeolocationButton onSelect={handleSelect} disabled={isLoading} />
-        </div>
-        {selected && (
-          <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-1 text-xs text-sky-800">
-            <MapPin className="h-3.5 w-3.5" />
-            {selected.name}
-            {selected.state ? `, ${selected.state}` : ""} ({selected.latitude.toFixed(4)},{" "}
-            {selected.longitude.toFixed(4)})
-          </p>
-        )}
-      </div>
+      <SearchCard
+        title="Escolher localidade"
+        subtitle="A comparação usa a mesma cidade para as duas fontes."
+        selected={selected}
+        isLoading={isLoading}
+        onSelect={handleSelect}
+      />
 
       {!selected && !isLoading && (
         <div className="rounded-3xl border border-dashed border-slate-300 bg-white/70 p-8 text-center">

@@ -1,14 +1,35 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CloudSun, MapPin, Sparkles } from "lucide-react";
-import { GeolocationButton } from "@/components/location/geolocation-button";
-import { LocationSearch } from "@/components/location/location-search";
+import Link from "next/link";
+import { ArrowRight, BarChart3, Scale, ShieldCheck } from "lucide-react";
+
+import { AppFooter } from "@/components/layout/app-footer";
+import { AppNavbar } from "@/components/layout/app-navbar";
+import { SearchCard } from "@/components/location/search-card";
 import { ForecastPanel } from "@/components/weather/forecast-panel";
 import { getLastLocation, saveLastLocation } from "@/lib/location-storage";
 import type { LocationResult } from "@/schemas/location";
 import type { ForecastResponse } from "@/types/forecast";
 import type { SelectedLocation } from "@/types/location";
+
+const HIGHLIGHTS = [
+  {
+    icon: Scale,
+    title: "Duas fontes, lado a lado",
+    description: "Open-Meteo e WeatherAPI.com consultadas em paralelo para a mesma data.",
+  },
+  {
+    icon: BarChart3,
+    title: "Consolidação explicável",
+    description: "Média, divergência e concordância em números simples de entender.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Pensado para o campo",
+    description: "Interface mobile-first para apoiar decisões de plantio e irrigação.",
+  },
+] as const;
 
 export default function Home() {
   const [selected, setSelected] = useState<SelectedLocation | null>(null);
@@ -64,7 +85,6 @@ export default function Home() {
   // Restaura a última localidade persistida (após o mount, sem mismatch de hidratação).
   useEffect(() => {
     let active = true;
-    // Fora do ciclo síncrono do efeito, como callback de "external system".
     void Promise.resolve().then(() => {
       if (!active) return;
       const last = getLastLocation();
@@ -79,75 +99,104 @@ export default function Home() {
   }, [loadForecast]);
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_35%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.12),_transparent_28%),linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)]">
-      <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col px-4 py-4 sm:px-6">
-        <header className="flex items-center justify-between rounded-full border border-white/60 bg-white/75 px-4 py-3 shadow-sm backdrop-blur-xl">
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-slate-950 p-1.5 text-white">
-              <CloudSun className="h-4 w-4" />
-            </span>
+    <div className="flex min-h-screen flex-col">
+      <AppNavbar />
+
+      <main className="flex-1">
+        {/* Faixa de destaque */}
+        <section className="border-b border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+          <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1.2fr_0.8fr] lg:py-14">
             <div>
-              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-slate-500">
-                AgroClima
+              <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                AgroClima · projeto acadêmico Univesp
               </p>
-              <p className="text-sm text-slate-600">
-                Comparação simples de previsões meteorológicas.
+              <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl">
+                Compare duas fontes de previsão e tome decisão com mais segurança.
+              </h1>
+              <p className="mt-4 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
+                O AgroClima consulta a Open-Meteo e a WeatherAPI.com para a mesma
+                cidade, mostra o valor consolidado de cada dia e indica o quanto as
+                fontes concordam — em uma leitura simples, pensada para o celular.
               </p>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/comparar"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-slate-950 px-6 text-sm font-medium text-white shadow-sm transition-colors hover:bg-slate-800"
+                >
+                  Comparar previsões
+                  <ArrowRight className="h-4 w-4" aria-hidden />
+                </Link>
+                <span className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-sm text-slate-600">
+                  Fontes: Open-Meteo + WeatherAPI.com
+                </span>
+              </div>
+            </div>
+
+            <div className="grid content-center gap-3">
+              {HIGHLIGHTS.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div
+                    key={item.title}
+                    className="flex items-start gap-3 rounded-2xl border border-white/70 bg-white/80 p-4 shadow-sm backdrop-blur"
+                  >
+                    <span className="rounded-xl bg-emerald-100 p-2 text-emerald-700">
+                      <Icon className="h-5 w-5" aria-hidden />
+                    </span>
+                    <div>
+                      <h2 className="text-sm font-semibold text-slate-900">{item.title}</h2>
+                      <p className="mt-1 text-sm leading-6 text-slate-600">{item.description}</p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-950 px-3 py-1 text-xs font-medium text-white shadow-sm">
-            <Sparkles className="h-3.5 w-3.5" />
-            Pré-MVP
-          </span>
-        </header>
+        </section>
 
-        <section className="mt-6 rounded-3xl border border-slate-200/80 bg-white/85 p-5 shadow-sm backdrop-blur sm:p-6">
-          <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">
-            Buscar previsão do tempo
-          </h1>
-          <p className="mt-1 text-sm leading-6 text-slate-600">
-            Compare a Open-Meteo e a WeatherAPI.com para a sua cidade.
-          </p>
+        {/* Busca + previsão */}
+        <section className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
+          <div className="grid gap-6 lg:grid-cols-[380px_1fr] lg:items-start">
+            <div className="space-y-4">
+              <SearchCard
+                title="Buscar previsão"
+                subtitle="Informe a cidade ou use a localização do dispositivo."
+                selected={selected}
+                isLoading={isLoading}
+                onSelect={handleSelect}
+              />
 
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start">
-            <div className="flex-1">
-              <LocationSearch onSelect={handleSelect} />
+              {forecast && (
+                <Link
+                  href="/comparar"
+                  className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-800 transition-colors hover:bg-emerald-100"
+                >
+                  Ver comparação detalhada com concordância
+                  <ArrowRight className="h-4 w-4" aria-hidden />
+                </Link>
+              )}
             </div>
-            <GeolocationButton onSelect={handleSelect} disabled={isLoading} />
+
+            <div>
+              {selected ? (
+                <ForecastPanel forecast={forecast} isLoading={isLoading} error={error} />
+              ) : (
+                <div className="flex h-full min-h-64 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-white/60 p-10 text-center">
+                  <span className="rounded-2xl bg-slate-100 p-3 text-slate-400">
+                    <BarChart3 className="h-7 w-7" aria-hidden />
+                  </span>
+                  <p className="max-w-sm text-sm leading-6 text-slate-500">
+                    Busque uma cidade ou use sua localização para ver a previsão dos
+                    próximos 3 dias, com os valores de cada fonte.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
-
-          {selected && (
-            <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700">
-              <MapPin className="h-3.5 w-3.5" />
-              {selected.name}
-              <span className="text-sky-500">
-                ({selected.latitude.toFixed(4)}, {selected.longitude.toFixed(4)})
-              </span>
-            </p>
-          )}
         </section>
+      </main>
 
-        <section className="mt-4 flex-1">
-          {selected ? (
-            <ForecastPanel forecast={forecast} isLoading={isLoading} error={error} />
-          ) : (
-            <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-slate-300 bg-white/50 p-10 text-center">
-              <MapPin className="h-8 w-8 text-slate-300" />
-              <p className="max-w-sm text-sm leading-6 text-slate-500">
-                Busque uma cidade ou use sua localização para ver a previsão comparada
-                entre as duas fontes.
-              </p>
-            </div>
-          )}
-        </section>
-
-        <footer className="pb-6 pt-8 text-center text-xs leading-5 text-slate-400">
-          Fontes meteorológicas: Open-Meteo e WeatherAPI.com. Previsões de 3 dias.
-          <br />
-          Projeto acadêmico — os valores exibidos não substituem alertas
-          meteorológicos oficiais.
-        </footer>
-      </div>
-    </main>
+      <AppFooter />
+    </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { AgreementBadge } from "@/components/comparacao/agreement-badge";
+import { ForecastComparisonChart } from "@/components/comparacao/forecast-comparison-chart";
 import { METRIC_KEYS, compareAlignedDays } from "@/lib/weather/compare";
 import { cn } from "@/lib/utils";
 import type { DailyComparison, MetricComparison, MetricKey } from "@/types/comparison";
@@ -30,12 +31,12 @@ function formatNumber(value: number | null, decimals: number): string {
   return value.toLocaleString("pt-BR", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
-function formatDate(isoDate: string): { weekday: string; day: string } {
-  const [y, m, d] = isoDate.split("-").map(Number);
-  const date = new Date(y, m - 1, d);
+function formatDayLabel(isoDate: string): { weekday: string; day: string } {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
   return {
     weekday: date.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", ""),
-    day: `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}`,
+    day: `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}`,
   };
 }
 
@@ -118,7 +119,7 @@ export function ComparisonView({ data }: { data: ForecastResponse }) {
 
   if (!day) {
     return (
-      <p className="rounded-3xl border border-slate-200 bg-white p-6 text-slate-700">
+      <p className="rounded-3xl border border-slate-200 bg-white p-6 text-sm text-slate-700">
         Não há dados comparáveis para esta localidade no momento.
       </p>
     );
@@ -128,22 +129,23 @@ export function ComparisonView({ data }: { data: ForecastResponse }) {
     <section className="space-y-5">
       <div className="grid grid-cols-3 gap-2" role="tablist" aria-label="Dias da previsão">
         {days.map((d, index) => {
-          const { weekday, day: label } = formatDate(d.date);
+          const { weekday, day: label } = formatDayLabel(d.date);
+          const active = index === selected;
           return (
             <button
               key={d.date}
               type="button"
               role="tab"
-              aria-selected={index === selected}
+              aria-selected={active}
               onClick={() => setSelected(index)}
               className={cn(
-                "rounded-2xl border px-3 py-2 text-left transition",
-                index === selected
-                  ? "border-slate-950 bg-slate-950 text-white"
-                  : "border-slate-200 bg-white text-slate-900 hover:bg-slate-50",
+                "rounded-2xl border px-3 py-2.5 text-left transition",
+                active
+                  ? "border-slate-950 bg-slate-950 text-white shadow-sm"
+                  : "border-slate-200 bg-white text-slate-900 hover:border-slate-300 hover:bg-slate-50",
               )}
             >
-              <span className="block text-xs uppercase tracking-wide opacity-70">
+              <span className={cn("block text-xs uppercase tracking-wide", active ? "opacity-80" : "opacity-70")}>
                 {index === 0 ? "hoje" : weekday}
               </span>
               <span className="block text-lg font-semibold">{label}</span>
@@ -159,6 +161,8 @@ export function ComparisonView({ data }: { data: ForecastResponse }) {
         </div>
         <p className="mt-2 text-sm leading-6 text-slate-600">{summary(day)}</p>
       </div>
+
+      <ForecastComparisonChart days={days} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {METRIC_KEYS.map((key) => (
